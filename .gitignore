@@ -9,6 +9,10 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+package-lock.json
+
+# agent context (local only)
+.claude/
 /context/current-issues.md
 # testing
 /coverage
@@ -41,3 +45,12 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+
+.trigger
+
+# generated local data
+/data/canvas/
+/data/specs/
+
+# internal feature specs (dev-only context)
+/context/feature-specs/

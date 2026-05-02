@@ -66,7 +66,7 @@ function buildContext(nodes: Node[], edges: Edge[], chatHistory: ChatMessage[]):
     .join("\n")
 
   const chatLines = chatHistory
-    .map((m) => `${m.role === "user" ? "User" : "Ghost AI"}: ${m.content}`)
+    .map((m) => `${m.role === "user" ? "User" : "SpecFrame AI"}: ${m.content}`)
     .join("\n")
 
   return [
@@ -81,7 +81,7 @@ function buildContext(nodes: Node[], edges: Edge[], chatHistory: ChatMessage[]):
   ].join("\n")
 }
 
-const SYSTEM_PROMPT = `You are Ghost AI, a senior technical architect. Generate a comprehensive Markdown technical specification document based on the provided architecture canvas and conversation context.
+const SYSTEM_PROMPT = `You are SpecFrame AI, a senior technical architect. Generate a comprehensive Markdown technical specification document based on the provided architecture canvas and conversation context.
 
 Structure the spec as follows:
 1. **Overview** — What the system does and its key goals
@@ -98,7 +98,7 @@ export const generateSpec = schemaTask({
   schema: payloadSchema,
   retry: { maxAttempts: 2, minTimeoutInMs: 1000, maxTimeoutInMs: 10000, factor: 2 },
   run: async (payload) => {
-    const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY })
+    const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY })
 
     metadata.set("status", "starting")
     logger.info("Generating spec", {

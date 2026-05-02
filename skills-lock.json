@@ -34,8 +34,7 @@
     "liveblocks-best-practices": {
       "source": "liveblocks/skills",
       "sourceType": "github",
-      "skillPath": "skills/liveblocks-best-practices/SKILL.md",
-      "computedHash": "2b3daf7dda490867910431e73bc782b167159be668ac658977cc1fe5464d1d96"
+      "computedHash": "df4f54f66e81c580d25c5fee989768368837df694ab63c0f4a0fd70500cd16af"
     },
     "prisma-cli": {
       "source": "prisma/skills",
