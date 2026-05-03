@@ -3,10 +3,18 @@
 Update this file whenever the current phase, active feature, or implementation state changes.
 
 ## Current Phase
-- Feature 28 (Spec Persistence & Download) — complete
+- Local dev environment fully initialized — all services connected and working
 
 ## Current Goal
-- Feature 29 (TBD)
+- Feature 29 (TBD) — next implementation feature
+
+## Infrastructure (Completed 2026-05-02)
+- Rebranded from Ghost AI → **SpecFrame** across all source files, UI, and AI system prompts
+- `liveblocks.config.ts` restored with full types (Storage, Presence, UserMeta, RoomEvent, FeedMessageData)
+- Trigger.dev project linked to `proj_bzpbyveqfaigwhmvzmgj`; local worker runs via `npx trigger.dev@latest dev`
+- Vercel project `specframe` deployed at `ghost-ai-six.vercel.app`; Blob store connected (IAD)
+- All env vars set: Clerk, Liveblocks, Trigger.dev, Prisma Postgres, Vercel Blob, Google Gemini
+
 
 ## Completed
 

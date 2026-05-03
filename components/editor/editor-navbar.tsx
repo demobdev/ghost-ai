@@ -3,6 +3,7 @@
 import { LayoutTemplate, PanelLeftClose, PanelLeftOpen, Save, Share2, Sparkles } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
+import { Logo } from "@/components/logo"
 import type { SaveStatus } from "@/hooks/use-canvas-autosave"
 
 interface EditorNavbarProps {
@@ -45,7 +46,9 @@ export function EditorNavbar({
             <p className="truncate text-sm font-medium text-text-primary">{projectName}</p>
             <p className="text-xs text-text-faint">Workspace</p>
           </div>
-        ) : null}
+        ) : (
+          <Logo size={24} />
+        )}
       </div>
 
       <div className="flex items-center gap-2">

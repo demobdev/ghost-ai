@@ -54,3 +54,7 @@ next-env.d.ts
 
 # internal feature specs (dev-only context)
 /context/feature-specs/
+.env*.local
+
+# clerk configuration (can include secrets)
+/.clerk/

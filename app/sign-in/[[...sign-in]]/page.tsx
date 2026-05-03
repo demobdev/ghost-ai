@@ -1,5 +1,6 @@
 import { SignIn } from "@clerk/nextjs"
 import { BrainCircuit, Share2, ScrollText } from "lucide-react"
+import { Logo } from "@/components/logo"
 
 const features = [
   {
@@ -27,19 +28,7 @@ export default function SignInPage() {
     <main className="min-h-screen flex">
       <div className="hidden lg:flex w-1/2 flex-col bg-bg-surface border-r border-border-default">
         <div className="px-12 pt-10">
-          <div className="flex items-center gap-2.5">
-            <div className="h-7 w-7 rounded-lg bg-accent-primary flex items-center justify-center shrink-0">
-              <span
-                className="text-bg-base font-bold text-xs leading-none"
-                style={{ fontFamily: "var(--font-geist-sans)" }}
-              >
-                G
-              </span>
-            </div>
-            <span className="text-sm font-semibold text-text-primary">
-              SpecFrame
-            </span>
-          </div>
+          <Logo />
         </div>
 
         <div className="flex-1 flex flex-col justify-center px-12 py-16">
