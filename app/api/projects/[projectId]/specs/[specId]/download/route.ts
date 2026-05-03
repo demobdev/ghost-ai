@@ -1,4 +1,3 @@
-import { getDownloadUrl } from "@vercel/blob"
 import { prisma } from "@/lib/prisma"
 import { getCurrentProjectIdentity, userHasProjectAccess } from "@/lib/project-access"
 import type { NextRequest } from "next/server"
@@ -20,8 +19,9 @@ export async function GET(
   })
   if (!spec) return Response.json({ error: "Not found" }, { status: 404 })
 
-  const signedUrl = await getDownloadUrl(spec.filePath)
-  const blobResponse = await fetch(signedUrl)
+  const blobResponse = await fetch(spec.filePath, {
+    headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+  })
   if (!blobResponse.ok) {
     return Response.json({ error: "File not found" }, { status: 404 })
   }

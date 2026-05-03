@@ -2,10 +2,18 @@ import { MarkerType } from "@xyflow/react"
 import type { CanvasNode, CanvasEdge, NodeShape } from "@/types/canvas"
 import { NODE_COLORS, SHAPE_DEFAULTS } from "@/types/canvas"
 
+export interface TemplateInsight {
+  whenToUse: string
+  useCases: string[]
+  pros: string[]
+  cons: string[]
+}
+
 export interface CanvasTemplate {
   id: string
   name: string
   description: string
+  insight: TemplateInsight
   nodes: CanvasNode[]
   edges: CanvasEdge[]
 }
@@ -52,11 +60,16 @@ function e(id: string, source: string, target: string): CanvasEdge {
 }
 
 export const CANVAS_TEMPLATES: CanvasTemplate[] = [
-  // ─── existing 3 ────────────────────────────────────────────────────────────
   {
     id: "microservices",
     name: "Microservices",
     description: "API Gateway routes traffic to isolated services, each backed by a dedicated database and connected via a shared message bus.",
+    insight: {
+      whenToUse: "When teams of 10+ engineers need to deploy, scale, and fail independently. Best after a monolith has proven product-market fit.",
+      useCases: ["Large-scale e-commerce platforms", "SaaS products with distinct feature domains", "Enterprise systems modernising a legacy monolith"],
+      pros: ["Independent deployability per service", "Technology flexibility per team", "Isolated failure domains"],
+      cons: ["Distributed systems complexity", "Network latency between services", "Harder local development setup"],
+    },
     nodes: [
       n("ms-gw",    "API Gateway",       1, "rectangle", 240,   0),
       n("ms-auth",  "Auth Service",      2, "pill",        0, 160),
@@ -79,6 +92,12 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
     id: "cicd-pipeline",
     name: "CI/CD Pipeline",
     description: "End-to-end delivery from source commit through build, test, containerisation, and staged deployment to production.",
+    insight: {
+      whenToUse: "Any team shipping software more than once a week. Required for regulated industries needing audit trails and repeatable deployments.",
+      useCases: ["SaaS products with frequent feature releases", "Mobile app store submissions", "Infrastructure-as-code deployments"],
+      pros: ["Automated quality gates catch regressions early", "Full audit history of every deploy", "Faster, safer release cycles"],
+      cons: ["Pipeline maintenance overhead", "Slow feedback if test suite is heavy", "Requires upfront investment in test coverage"],
+    },
     nodes: [
       n("ci-src",   "Source Code",          1, "rectangle",    0, 60),
       n("ci-build", "Build",                3, "rectangle",  220, 60),
@@ -101,6 +120,12 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
     id: "event-driven",
     name: "Event-Driven System",
     description: "Producers publish events to a central bus. Independent consumers handle emails, push notifications, analytics, and error queues.",
+    insight: {
+      whenToUse: "When services need to react to state changes without tight coupling. Essential for high-throughput or audit-heavy systems like fintech or logistics.",
+      useCases: ["Order processing with downstream notifications", "IoT sensor data pipelines", "Banking transaction audit systems"],
+      pros: ["Fully decoupled producers and consumers", "Natural audit log via event store", "Consumers scale independently"],
+      cons: ["Eventual consistency (not immediate)", "Harder to trace message flows when debugging", "Dead letter queue complexity requires monitoring"],
+    },
     nodes: [
       n("ev-p1",     "Producer A",        1, "rectangle",   0, 100),
       n("ev-p2",     "Producer B",        1, "rectangle",   0, 240),
@@ -121,13 +146,17 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
     ],
   },
 
-  // ─── 6 new templates ───────────────────────────────────────────────────────
-
-  // 4. Serverless API — Lambda fan-out from a single API Gateway
+  // 4. Serverless API
   {
     id: "serverless-api",
     name: "Serverless API",
     description: "CDN and API Gateway fan out to isolated Lambda functions, each owning its own datastore and pulling secrets from a central manager.",
+    insight: {
+      whenToUse: "Early-stage products or workloads with unpredictable traffic spikes. Pay-per-request economics make it cost-zero at idle.",
+      useCases: ["API backends for mobile apps", "Scheduled jobs and webhook receivers", "MVPs and prototypes with uncertain scale"],
+      pros: ["Zero server management", "Scales to zero (no idle cost)", "Per-request billing model"],
+      cons: ["Cold start latency (50–500ms)", "Hard to run heavy long-lived workloads", "Vendor lock-in risk"],
+    },
     nodes: [
       n("sv-cdn",  "CDN",           7, "hexagon",    300,   0),
       n("sv-gw",   "API Gateway",   1, "rectangle",  300, 160),
@@ -153,11 +182,17 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
     ],
   },
 
-  // 5. Real-time Chat — WebSocket gateway, Redis pub/sub, media CDN
+  // 5. Real-time Chat
   {
     id: "realtime-chat",
     name: "Real-time Chat",
     description: "WebSocket gateway distributes messages via Redis Pub/Sub. Auth, push notifications, and media uploads are handled by dedicated services.",
+    insight: {
+      whenToUse: "Any product requiring sub-second message delivery between users. The WebSocket + Redis pub/sub pattern is the industry standard for chat at scale.",
+      useCases: ["Collaboration tools like Slack or Notion", "In-app customer support", "Multiplayer gaming lobbies"],
+      pros: ["Sub-100ms delivery latency", "Redis fan-out scales to millions of connections", "Presence awareness built in"],
+      cons: ["Load balancer must support sticky sessions", "Redis memory grows with active users", "Reconnection logic required on mobile"],
+    },
     nodes: [
       n("rc-web",   "Web Client",        1, "rectangle",   0,   0),
       n("rc-mob",   "Mobile Client",     1, "rectangle",  240,   0),
@@ -183,11 +218,17 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
     ],
   },
 
-  // 6. ML/AI Pipeline — data through training to live inference
+  // 6. ML/AI Pipeline
   {
     id: "ml-pipeline",
     name: "ML / AI Pipeline",
     description: "Raw data flows from ingestion through a feature store into a training cluster. The resulting model is registered and served via an inference API with live monitoring.",
+    insight: {
+      whenToUse: "When you need to train models on production data continuously and serve predictions at scale, separate from your main application.",
+      useCases: ["Recommendation engines", "Fraud detection systems", "NLP and computer vision APIs"],
+      pros: ["Reproducible experiments via registry", "Decoupled training from serving", "Feature store enables reuse across models"],
+      cons: ["Complex, costly infrastructure", "Data drift requires continuous monitoring", "High GPU compute costs during training"],
+    },
     nodes: [
       n("ml-raw",  "Raw Data",          1, "cylinder",      0,  40),
       n("ml-ing",  "Ingestion",         3, "rectangle",   220,  40),
@@ -213,11 +254,17 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
     ],
   },
 
-  // 7. Multi-tenant SaaS — shared control plane, isolated data plane
+  // 7. Multi-tenant SaaS
   {
     id: "multitenant-saas",
     name: "Multi-tenant SaaS",
     description: "A shared control plane handles auth and routing. A tenant router directs each request to an isolated per-tenant database while shared cache and search serve all tenants.",
+    insight: {
+      whenToUse: "B2B SaaS where enterprise customers require data isolation, compliance audits, or per-tenant customisation. Choose this over a shared-DB approach when selling to regulated industries.",
+      useCases: ["HR and payroll software", "Healthcare or legal CRMs", "Any SaaS with SOC 2 or HIPAA requirements"],
+      pros: ["Strong data isolation per tenant", "Easier per-tenant compliance audits", "Per-tenant scaling and backup"],
+      cons: ["Tenant router adds complexity", "Schema migrations must run per tenant", "Higher infrastructure cost than shared DB"],
+    },
     nodes: [
       n("mt-ta",  "Tenant A",         1, "rectangle",    0,   0),
       n("mt-tb",  "Tenant B",         1, "rectangle",  200,   0),
@@ -243,11 +290,17 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
     ],
   },
 
-  // 8. Data Lakehouse — ETL pipeline from sources to BI & ML
+  // 8. Data Lakehouse
   {
     id: "data-lakehouse",
     name: "Data Lakehouse",
     description: "Multiple event and CDC sources feed an ingestion layer. Raw data lands in S3, is transformed by Spark, and surfaces in a warehouse for BI dashboards and ML feature stores.",
+    insight: {
+      whenToUse: "Organisations with data from multiple sources who need both SQL analytics and ML workloads. Unifies the flexibility of a data lake with the query performance of a warehouse.",
+      useCases: ["Business intelligence and executive dashboards", "Customer behaviour and funnel analytics", "ML feature pipelines fed by production data"],
+      pros: ["Single source of truth across all teams", "Supports SQL, Python, and ML workloads", "Cost-effective cold storage in S3"],
+      cons: ["Complex ETL pipelines to maintain", "Expertise in Spark or dbt required", "Data quality issues amplify downstream"],
+    },
     nodes: [
       n("dl-app",  "App Events",       1, "pill",          0,   0),
       n("dl-cdc",  "DB Change Feed",   6, "pill",        200,   0),
@@ -273,11 +326,17 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
     ],
   },
 
-  // 9. Mobile Backend — BaaS-style hub for iOS & Android
+  // 9. Mobile Backend
   {
     id: "mobile-backend",
     name: "Mobile Backend",
     description: "iOS and Android clients connect to an API gateway that fans out to auth, user profile, push notifications, offline sync, and a media CDN backed by object storage.",
+    insight: {
+      whenToUse: "iOS and Android apps needing auth, push notifications, offline sync, and media delivery from a single backend. Centralises cross-platform concerns.",
+      useCases: ["Social apps with media uploads", "Fitness and health tracking apps", "B2B field service apps requiring offline support"],
+      pros: ["Unified auth and push across platforms", "Offline-first sync built in", "Media CDN reduces latency globally"],
+      cons: ["Tight coupling to mobile client API shape", "Conflict resolution for offline sync is complex", "Push notification service dependencies (APNs, FCM)"],
+    },
     nodes: [
       n("mb-ios",  "iOS App",          1, "rectangle",    0, 100),
       n("mb-and",  "Android App",      6, "rectangle",    0, 280),

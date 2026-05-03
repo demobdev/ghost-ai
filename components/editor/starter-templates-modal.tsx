@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -8,7 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Download } from "lucide-react"
+import { Download, CheckCircle2, XCircle, Info } from "lucide-react"
 import { CANVAS_TEMPLATES, type CanvasTemplate } from "@/components/editor/starter-templates"
 
 // Internal viewBox coordinate space — nodes are scaled/offset to fit here.
@@ -42,7 +43,6 @@ function TemplatePreview({ template }: TemplatePreviewProps) {
   const markerId = `arr-${template.id}`
 
   return (
-    // Wrapper keeps the 500:280 aspect ratio at any card width.
     <div className="w-full" style={{ aspectRatio: `${VB_W} / ${VB_H}` }}>
       <svg
         viewBox={`0 0 ${VB_W} ${VB_H}`}
@@ -65,7 +65,6 @@ function TemplatePreview({ template }: TemplatePreviewProps) {
           </marker>
         </defs>
 
-        {/* edges drawn before nodes so they sit underneath */}
         {template.edges.map((edge) => {
           const src = nodeMap.get(edge.source)
           const tgt = nodeMap.get(edge.target)
@@ -150,7 +149,6 @@ function TemplatePreview({ template }: TemplatePreviewProps) {
               />
             )
           }
-          // rectangle and cylinder both render as rounded rect
           return (
             <rect
               key={nd.id}
@@ -170,6 +168,60 @@ function TemplatePreview({ template }: TemplatePreviewProps) {
   )
 }
 
+interface InsightPanelProps {
+  template: CanvasTemplate
+}
+
+function InsightPanel({ template }: InsightPanelProps) {
+  const { insight } = template
+  return (
+    <div className="absolute inset-0 flex flex-col gap-3 overflow-y-auto rounded-t-2xl bg-bg-base/95 p-4 backdrop-blur-sm">
+      <div className="flex items-center gap-2">
+        <Info className="h-3.5 w-3.5 shrink-0 text-accent-primary" />
+        <p className="text-xs font-semibold text-accent-primary uppercase tracking-wider">When to use</p>
+      </div>
+      <p className="text-xs leading-relaxed text-text-secondary">{insight.whenToUse}</p>
+
+      <div>
+        <p className="mb-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider">Use cases</p>
+        <ul className="space-y-1">
+          {insight.useCases.map((uc) => (
+            <li key={uc} className="flex items-start gap-1.5 text-xs text-text-secondary">
+              <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent-primary" />
+              {uc}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <p className="mb-1.5 text-xs font-semibold text-state-success uppercase tracking-wider">Strengths</p>
+          <ul className="space-y-1">
+            {insight.pros.map((p) => (
+              <li key={p} className="flex items-start gap-1.5 text-xs text-text-secondary">
+                <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-state-success" />
+                {p}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="mb-1.5 text-xs font-semibold text-state-error uppercase tracking-wider">Trade-offs</p>
+          <ul className="space-y-1">
+            {insight.cons.map((c) => (
+              <li key={c} className="flex items-start gap-1.5 text-xs text-text-secondary">
+                <XCircle className="mt-0.5 h-3 w-3 shrink-0 text-state-error" />
+                {c}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface StarterTemplatesModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -181,6 +233,8 @@ export function StarterTemplatesModal({
   onOpenChange,
   onImport,
 }: StarterTemplatesModalProps) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+
   function handleImport(template: CanvasTemplate) {
     onImport(template)
     onOpenChange(false)
@@ -194,6 +248,7 @@ export function StarterTemplatesModal({
           <DialogDescription>
             Choose a starter template to pre-populate your canvas. Any existing nodes will be
             replaced — use <kbd className="rounded border border-border-default bg-bg-elevated px-1 py-0.5 font-mono text-[11px] text-text-muted">⌘Z</kbd> to undo.
+            Hover any card to learn when and why you&apos;d use that architecture.
           </DialogDescription>
         </DialogHeader>
 
@@ -203,10 +258,15 @@ export function StarterTemplatesModal({
               <div
                 key={template.id}
                 className="flex flex-col overflow-hidden rounded-2xl border border-border-default bg-bg-elevated transition-colors hover:border-border-subtle"
+                onMouseEnter={() => setHoveredId(template.id)}
+                onMouseLeave={() => setHoveredId(null)}
               >
-                {/* Preview */}
-                <div className="bg-bg-base px-5 pt-5 pb-4">
+                {/* Preview area with insight overlay */}
+                <div className="relative bg-bg-base px-5 pt-5 pb-4">
                   <TemplatePreview template={template} />
+                  {hoveredId === template.id && (
+                    <InsightPanel template={template} />
+                  )}
                 </div>
 
                 {/* Card body */}
