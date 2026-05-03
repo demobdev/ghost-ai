@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react"
 import ReactMarkdown from "react-markdown"
-import { Bot, X, Send, FileText, Download, Loader2, MessageSquare, Package } from "lucide-react"
+import { Bot, X, Send, FileText, Download, Loader2, MessageSquare, Package, ShieldCheck, AlertTriangle, Info, ChevronDown, ChevronUp } from "lucide-react"
 import { toPng } from "html-to-image"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -137,6 +137,12 @@ export function AiSidebar({ isOpen, onClose, roomId, projectId }: AiSidebarProps
     return m ? Object.values(m) : []
   })
 
+  // Review state
+  const [reviewLoading, setReviewLoading] = useState(false)
+  const [reviewResult, setReviewResult] = useState<ReviewResult | null>(null)
+  const [reviewError, setReviewError] = useState<string | null>(null)
+  const [expandedFindings, setExpandedFindings] = useState<Set<string>>(new Set())
+
   const self = useSelf()
   const updateMyPresence = useUpdateMyPresence()
   const createFeed = useCreateFeed()
@@ -165,6 +171,37 @@ export function AiSidebar({ isOpen, onClose, roomId, projectId }: AiSidebarProps
     if (!isOpen) return
     fetchSpecs()
   }, [isOpen, fetchSpecs])
+
+  const handleReview = useCallback(async () => {
+    if (reviewLoading) return
+    setReviewLoading(true)
+    setReviewError(null)
+    setReviewResult(null)
+    setExpandedFindings(new Set())
+    try {
+      const res = await fetch("/api/ai/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nodes: nodesArray ?? [], edges: edgesArray ?? [] }),
+      })
+      if (!res.ok) throw new Error("Review failed")
+      const data = await res.json() as ReviewResult
+      setReviewResult(data)
+    } catch {
+      setReviewError("Failed to run review. Please try again.")
+    } finally {
+      setReviewLoading(false)
+    }
+  }, [reviewLoading, nodesArray, edgesArray])
+
+  const toggleFinding = useCallback((id: string) => {
+    setExpandedFindings((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
 
   const handleSpecRunTerminal = useCallback(
     (status: string) => {
@@ -619,6 +656,12 @@ export function AiSidebar({ isOpen, onClose, roomId, projectId }: AiSidebarProps
             AI Architect
           </TabsTrigger>
           <TabsTrigger
+            value="review"
+            className="rounded-lg px-3 py-1.5 text-xs font-medium data-active:bg-accent-ai data-active:text-white data-active:shadow-none"
+          >
+            Review
+          </TabsTrigger>
+          <TabsTrigger
             value="chat"
             className="rounded-lg px-3 py-1.5 text-xs font-medium data-active:bg-accent-ai data-active:text-white data-active:shadow-none"
           >
@@ -735,6 +778,18 @@ export function AiSidebar({ isOpen, onClose, roomId, projectId }: AiSidebarProps
               </div>
             </div>
           </div>
+        </TabsContent>
+
+        {/* Review Tab */}
+        <TabsContent value="review" className="min-h-0 flex-1 overflow-hidden">
+          <ArchitectureReviewTab
+            loading={reviewLoading}
+            result={reviewResult}
+            error={reviewError}
+            expandedFindings={expandedFindings}
+            onReview={handleReview}
+            onToggleFinding={toggleFinding}
+          />
         </TabsContent>
 
         {/* Chat Tab */}
@@ -916,5 +971,260 @@ export function AiSidebar({ isOpen, onClose, roomId, projectId }: AiSidebarProps
       </Tabs>
     </aside>
     </>
+  )
+}
+
+// ─── Review types & component ──────────────────────────────────────────────
+
+type Severity = "critical" | "warning" | "info"
+
+interface ReviewFinding {
+  id: string
+  severity: Severity
+  category: string
+  title: string
+  description: string
+  recommendation: string
+  affectedNodes: string[]
+}
+
+interface ReviewResult {
+  score: number
+  summary: string
+  findings: ReviewFinding[]
+}
+
+const SEVERITY_CONFIG: Record<
+  Severity,
+  { label: string; icon: React.ReactNode; border: string; bg: string; text: string }
+> = {
+  critical: {
+    label: "Critical",
+    icon: <AlertTriangle className="h-3 w-3" />,
+    border: "border-red-500/40",
+    bg: "bg-red-500/10",
+    text: "text-red-400",
+  },
+  warning: {
+    label: "Warning",
+    icon: <AlertTriangle className="h-3 w-3" />,
+    border: "border-amber-500/40",
+    bg: "bg-amber-500/10",
+    text: "text-amber-400",
+  },
+  info: {
+    label: "Info",
+    icon: <Info className="h-3 w-3" />,
+    border: "border-blue-500/30",
+    bg: "bg-blue-500/10",
+    text: "text-blue-400",
+  },
+}
+
+function scoreColor(score: number): string {
+  if (score >= 80) return "#62C073"  // green
+  if (score >= 60) return "#FF990A"  // amber
+  if (score >= 40) return "#FF6166"  // red-orange
+  return "#F75F8F"                   // pink/critical
+}
+
+function scoreLabel(score: number): string {
+  if (score >= 90) return "Excellent"
+  if (score >= 75) return "Good"
+  if (score >= 55) return "Fair"
+  if (score >= 35) return "Needs Work"
+  return "Critical Issues"
+}
+
+interface ArchitectureReviewTabProps {
+  loading: boolean
+  result: ReviewResult | null
+  error: string | null
+  expandedFindings: Set<string>
+  onReview: () => void
+  onToggleFinding: (id: string) => void
+}
+
+function ArchitectureReviewTab({
+  loading,
+  result,
+  error,
+  expandedFindings,
+  onReview,
+  onToggleFinding,
+}: ArchitectureReviewTabProps) {
+  const criticals = result?.findings.filter((f) => f.severity === "critical").length ?? 0
+  const warnings = result?.findings.filter((f) => f.severity === "warning").length ?? 0
+
+  return (
+    <div className="flex h-full flex-col">
+      <ScrollArea className="flex-1">
+        <div className="flex flex-col gap-4 p-4">
+
+          {/* Empty state */}
+          {!result && !loading && !error && (
+            <div className="flex flex-col items-center gap-5 py-8 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#10233D]">
+                <ShieldCheck className="h-6 w-6 text-[#52A8FF]" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-text-primary">Architecture Review</p>
+                <p className="mt-1 text-xs leading-5 text-text-muted">
+                  AI analyzes your canvas for reliability, security, scalability, and performance issues.
+                </p>
+              </div>
+              <div className="w-full rounded-2xl border border-border-subtle bg-bg-elevated p-3 text-left">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-text-faint">Reviews for</p>
+                <ul className="space-y-1">
+                  {["Single points of failure", "Missing auth layers", "Unscaled bottlenecks", "No caching strategy", "Observability gaps", "Security risks"].map((item) => (
+                    <li key={item} className="flex items-center gap-2 text-xs text-text-muted">
+                      <span className="h-1 w-1 rounded-full bg-accent-ai-text" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Loading */}
+          {loading && (
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <Loader2 className="h-6 w-6 animate-spin text-accent-ai-text" />
+              <p className="text-xs text-text-muted">Analyzing architecture…</p>
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400">
+              {error}
+            </div>
+          )}
+
+          {/* Results */}
+          {result && !loading && (
+            <>
+              {/* Score ring */}
+              <div className="flex flex-col items-center gap-3 rounded-2xl border border-border-subtle bg-bg-elevated p-4">
+                <div className="relative flex h-20 w-20 items-center justify-center">
+                  <svg className="absolute inset-0" viewBox="0 0 80 80">
+                    <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
+                    <circle
+                      cx="40" cy="40" r="34"
+                      fill="none"
+                      stroke={scoreColor(result.score)}
+                      strokeWidth="6"
+                      strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 34}`}
+                      strokeDashoffset={`${2 * Math.PI * 34 * (1 - result.score / 100)}`}
+                      transform="rotate(-90 40 40)"
+                      style={{ transition: "stroke-dashoffset 0.8s ease" }}
+                    />
+                  </svg>
+                  <span className="text-xl font-bold text-text-primary">{result.score}</span>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold" style={{ color: scoreColor(result.score) }}>
+                    {scoreLabel(result.score)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-text-muted">{result.summary}</p>
+                </div>
+                <div className="flex gap-3 text-[11px]">
+                  {criticals > 0 && (
+                    <span className="flex items-center gap-1 text-red-400">
+                      <AlertTriangle className="h-3 w-3" />
+                      {criticals} critical
+                    </span>
+                  )}
+                  {warnings > 0 && (
+                    <span className="flex items-center gap-1 text-amber-400">
+                      <AlertTriangle className="h-3 w-3" />
+                      {warnings} warning{warnings !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                  {criticals === 0 && warnings === 0 && (
+                    <span className="flex items-center gap-1 text-[#62C073]">
+                      <ShieldCheck className="h-3 w-3" />
+                      No critical issues
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Findings */}
+              {result.findings.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-text-faint">
+                    {result.findings.length} Finding{result.findings.length !== 1 ? "s" : ""}
+                  </p>
+                  {result.findings.map((finding) => {
+                    const cfg = SEVERITY_CONFIG[finding.severity]
+                    const expanded = expandedFindings.has(finding.id)
+                    return (
+                      <div
+                        key={finding.id}
+                        className={cn(
+                          "rounded-xl border p-3 transition-colors",
+                          cfg.border, cfg.bg
+                        )}
+                      >
+                        <button
+                          className="flex w-full items-start gap-2 text-left"
+                          onClick={() => onToggleFinding(finding.id)}
+                        >
+                          <span className={cn("mt-0.5 shrink-0", cfg.text)}>{cfg.icon}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-xs font-semibold text-text-primary">{finding.title}</p>
+                              <div className="flex shrink-0 items-center gap-1">
+                                <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-medium", cfg.text, cfg.bg)}>
+                                  {finding.category}
+                                </span>
+                                {expanded
+                                  ? <ChevronUp className="h-3 w-3 text-text-faint" />
+                                  : <ChevronDown className="h-3 w-3 text-text-faint" />}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                        {expanded && (
+                          <div className="mt-2 space-y-2 pl-5">
+                            <p className="text-[11px] leading-relaxed text-text-muted">
+                              {finding.description}
+                            </p>
+                            <div className="rounded-lg border border-border-subtle bg-bg-surface/50 p-2">
+                              <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider text-text-faint">Fix</p>
+                              <p className="text-[11px] leading-relaxed text-text-secondary">
+                                {finding.recommendation}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </ScrollArea>
+
+      {/* CTA */}
+      <div className="shrink-0 border-t border-border-default p-3">
+        <Button
+          onClick={onReview}
+          disabled={loading}
+          className="w-full gap-2 rounded-xl bg-[#10233D] text-[#52A8FF] hover:bg-[#10233D]/80 disabled:opacity-60"
+        >
+          {loading ? (
+            <><Loader2 className="h-3.5 w-3.5 animate-spin" />Analyzing…</>
+          ) : (
+            <><ShieldCheck className="h-3.5 w-3.5" />{result ? "Re-run Review" : "Review Architecture"}</>
+          )}
+        </Button>
+      </div>
+    </div>
   )
 }
