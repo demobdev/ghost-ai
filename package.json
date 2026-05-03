@@ -29,6 +29,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
+    "html-to-image": "^1.11.13",
+    "jszip": "^3.10.1",
     "lucide-react": "^1.11.0",
     "next": "16.2.4",
     "pg": "^8.20.0",
@@ -42,6 +44,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@trigger.dev/build": "4.4.5",
+    "@types/jszip": "^3.4.0",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",
     "@types/react": "^19",

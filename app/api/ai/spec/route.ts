@@ -14,6 +14,7 @@ export async function POST(request: Request) {
   const chatHistory = Array.isArray(b.chatHistory) ? b.chatHistory : []
   const nodes = Array.isArray(b.nodes) ? b.nodes : []
   const edges = Array.isArray(b.edges) ? b.edges : []
+  const snapshotUrl = typeof b.snapshotUrl === "string" ? b.snapshotUrl : undefined
 
   if (!roomId) {
     return Response.json({ error: "Missing roomId" }, { status: 400 })
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
     chatHistory,
     nodes,
     edges,
+    snapshotUrl,
   })
 
   await prisma.taskRun.create({

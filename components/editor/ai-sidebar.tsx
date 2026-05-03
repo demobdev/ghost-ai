@@ -2,7 +2,8 @@
 
 import { useState, useRef, useCallback, useEffect } from "react"
 import ReactMarkdown from "react-markdown"
-import { Bot, X, Send, FileText, Download, Loader2, MessageSquare } from "lucide-react"
+import { Bot, X, Send, FileText, Download, Loader2, MessageSquare, Package } from "lucide-react"
+import { toPng } from "html-to-image"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -45,6 +46,7 @@ const TERMINAL_STATUSES = [
 interface SpecItem {
   id: string
   filePath: string
+  snapshotUrl?: string | null
   createdAt: string
 }
 
@@ -232,11 +234,52 @@ export function AiSidebar({ isOpen, onClose, roomId, projectId }: AiSidebarProps
       content: msg.content,
     }))
 
+    // Capture canvas snapshot before triggering the task
+    let snapshotUrl: string | undefined
+    try {
+      const container = document.querySelector<HTMLElement>(".react-flow")
+      if (container) {
+        const dataUrl = await toPng(container, {
+          backgroundColor: "#080809",
+          pixelRatio: 2,
+          filter: (node) => {
+            if (node instanceof HTMLElement) {
+              if (
+                node.classList.contains("react-flow__controls") ||
+                node.classList.contains("react-flow__minimap") ||
+                node.classList.contains("react-flow__attribution") ||
+                node.dataset?.exportExclude === "true"
+              )
+                return false
+            }
+            return true
+          },
+        })
+        // Convert data URL to Blob and upload
+        const res = await fetch(dataUrl)
+        const imgBlob = await res.blob()
+        const uploadRes = await fetch(
+          `/api/projects/${encodeURIComponent(projectId ?? "")}/canvas/snapshot`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "image/png" },
+            body: imgBlob,
+          }
+        )
+        if (uploadRes.ok) {
+          const data = (await uploadRes.json()) as { url: string }
+          snapshotUrl = data.url
+        }
+      }
+    } catch {
+      // Non-fatal — spec still generates without snapshot
+    }
+
     try {
       const res = await fetch("/api/ai/spec", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roomId, chatHistory, nodes, edges }),
+        body: JSON.stringify({ roomId, chatHistory, nodes, edges, snapshotUrl }),
       })
       if (!res.ok) throw new Error("Spec generation failed")
       const { runId: newSpecRunId } = (await res.json()) as { runId: string }
@@ -254,7 +297,7 @@ export function AiSidebar({ isOpen, onClose, roomId, projectId }: AiSidebarProps
     } catch {
       setIsSpecGenerating(false)
     }
-  }, [isSpecGenerating, roomId, nodesArray, edgesArray, validatedChatMessages])
+  }, [isSpecGenerating, roomId, projectId, nodesArray, edgesArray, validatedChatMessages])
 
   // Receive broadcast status events for real-time strip text
   useEventListener(({ event }) => {
@@ -433,6 +476,18 @@ export function AiSidebar({ isOpen, onClose, roomId, projectId }: AiSidebarProps
       const a = document.createElement("a")
       a.href = `/api/projects/${projectId}/specs/${specId}/download`
       a.download = `spec-${specId}.md`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    },
+    [projectId]
+  )
+
+  const handleBundleDownload = useCallback(
+    (specId: string) => {
+      const a = document.createElement("a")
+      a.href = `/api/projects/${projectId}/specs/${specId}/bundle`
+      a.download = `specframe-bundle-${specId}.zip`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -828,14 +883,28 @@ export function AiSidebar({ isOpen, onClose, roomId, projectId }: AiSidebarProps
                           {formatSpecDate(spec.createdAt)}
                         </p>
                       </div>
+                      {/* MD download */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           handleSpecDownload(spec.id)
                         }}
+                        title="Download spec (.md)"
                         className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-text-faint opacity-0 transition-opacity hover:bg-bg-subtle hover:text-text-primary group-hover:opacity-100"
                       >
                         <Download className="h-3 w-3" />
+                      </button>
+                      {/* Bundle download — only if snapshot available */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleBundleDownload(spec.id)
+                        }}
+                        title={spec.snapshotUrl ? "Download bundle (.zip)" : "Re-generate to include canvas image"}
+                        disabled={!spec.snapshotUrl}
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-text-faint opacity-0 transition-opacity hover:bg-bg-subtle hover:text-text-primary group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+                      >
+                        <Package className="h-3 w-3" />
                       </button>
                     </div>
                   ))}

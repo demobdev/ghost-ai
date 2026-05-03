@@ -42,6 +42,7 @@ const payloadSchema = z.object({
   chatHistory: z.array(chatMessageSchema),
   nodes: z.array(nodeSchema),
   edges: z.array(edgeSchema),
+  snapshotUrl: z.string().optional(),
 })
 
 type Node = z.infer<typeof nodeSchema>
@@ -136,6 +137,7 @@ export const generateSpec = schemaTask({
       data: {
         projectId: payload.projectId,
         filePath: blob.url,
+        snapshotUrl: payload.snapshotUrl ?? null,
       },
     })
 
