@@ -197,8 +197,8 @@ export function StarterTemplatesModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="overflow-y-auto px-10 py-8">
-          <div className="grid grid-cols-3 gap-8">
+        <div className="overflow-y-auto px-10 py-8 max-h-[72vh]">
+          <div className="grid grid-cols-3 gap-6">
             {CANVAS_TEMPLATES.map((template) => (
               <div
                 key={template.id}
