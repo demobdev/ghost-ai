@@ -115,6 +115,14 @@ export function CanvasNodeComponent({ id, data, selected }: NodeProps<CanvasNode
   const stroke = selected ? BORDER_SELECTED : BORDER_REST
   const isSvg = shape === "diamond" || shape === "hexagon" || shape === "cylinder"
 
+  // Entrance animation — plays once on mount
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    // Tiny RAF delay so the initial keyframe fires reliably
+    const raf = requestAnimationFrame(() => setMounted(true))
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
   const [isEditing, setIsEditing] = useState(false)
   const editRef = useRef<HTMLDivElement>(null)
 
@@ -176,7 +184,14 @@ export function CanvasNodeComponent({ id, data, selected }: NodeProps<CanvasNode
 
   return (
     <div
-      style={{ width: "100%", height: "100%" }}
+      style={{
+        width: "100%",
+        height: "100%",
+        // Entrance animation
+        opacity: mounted ? 1 : 0,
+        transform: mounted ? "scale(1)" : "scale(0.82)",
+        transition: "opacity 0.22s ease, transform 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+      }}
       className="group/node relative flex items-center justify-center text-sm font-medium"
       onDoubleClick={startEditing}
     >

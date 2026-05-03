@@ -27,8 +27,10 @@ import { CanvasControls } from "@/components/editor/canvas/canvas-controls"
 import { PresenceCursors } from "@/components/editor/canvas/presence-cursors"
 import { CollaboratorAvatars } from "@/components/editor/canvas/collaborator-avatars"
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts"
+import { useHelperLines } from "@/hooks/use-helper-lines"
 import type { CanvasTemplate } from "@/components/editor/starter-templates"
 import { useCanvasAutosave, type SaveStatus } from "@/hooks/use-canvas-autosave"
+import { HelperLinesOverlay } from "@/components/editor/canvas/helper-lines-overlay"
 
 const nodeTypes = { canvasNode: CanvasNodeComponent }
 const edgeTypes = { canvasEdge: CanvasEdgeComponent }
@@ -191,7 +193,10 @@ export function CanvasEditor({ projectId, pendingTemplate, onTemplateImported, o
   const canUndo = useCanUndo()
   const canRedo = useCanRedo()
 
-  useKeyboardShortcuts({ reactFlow, undo, redo })
+  // Helper lines — show alignment guides while dragging
+  const { helperLines, onNodeDrag, onNodeDragStop } = useHelperLines(nodesRef.current)
+
+  useKeyboardShortcuts({ reactFlow, undo, redo, onNodesChange, onEdgesChange })
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -275,6 +280,8 @@ export function CanvasEditor({ projectId, pendingTemplate, onTemplateImported, o
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onNodeDrag={onNodeDrag}
+        onNodeDragStop={onNodeDragStop}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         connectionMode={ConnectionMode.Loose}
@@ -289,6 +296,7 @@ export function CanvasEditor({ projectId, pendingTemplate, onTemplateImported, o
           color="var(--color-border-subtle)"
         />
       </ReactFlow>
+      <HelperLinesOverlay lines={helperLines} />
       <CanvasControls
         onZoomIn={() => zoomIn({ duration: 200 })}
         onZoomOut={() => zoomOut({ duration: 200 })}
