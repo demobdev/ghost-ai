@@ -8,11 +8,13 @@ import type { SaveStatus } from "@/hooks/use-canvas-autosave"
 import { ProjectDialogs } from "@/components/editor/project-dialogs"
 import { ProjectShareDialog } from "@/components/editor/project-share-dialog"
 import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal"
+import { IngestModal } from "@/components/editor/ingest-modal"
 import { ProjectSidebar } from "@/components/editor/project-sidebar"
 import { AiSidebar } from "@/components/editor/ai-sidebar"
 import { CanvasRoom } from "@/components/editor/canvas/canvas-room"
 import { useProjectActions, type ProjectRow } from "@/hooks/use-project-actions"
 import type { CanvasTemplate } from "@/components/editor/starter-templates"
+import type { CanvasNode, CanvasEdge } from "@/types/canvas"
 
 interface EditorWorkspaceClientProps {
   currentProject: ProjectRow
@@ -31,13 +33,21 @@ export function EditorWorkspaceClient({
   const [aiSidebarOpen, setAiSidebarOpen] = useState(true)
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [templatesOpen, setTemplatesOpen] = useState(false)
+  const [ingestOpen, setIngestOpen] = useState(false)
   const [pendingTemplate, setPendingTemplate] = useState<CanvasTemplate | null>(null)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle")
   const saveFnRef = useRef<() => void>(() => {})
+  const autoLayoutFnRef = useRef<() => void>(() => {})
   const actions = useProjectActions()
 
   const handleSaveStatusChange = useCallback((status: SaveStatus) => setSaveStatus(status), [])
   const handleSaveReady = useCallback((fn: () => void) => { saveFnRef.current = fn }, [])
+  const handleAutoLayoutReady = useCallback((fn: () => void) => { autoLayoutFnRef.current = fn }, [])
+
+  // When the ingest modal finishes, treat the result like a template import
+  const handleIngestImport = useCallback(({ nodes, edges }: { nodes: CanvasNode[]; edges: CanvasEdge[] }) => {
+    setPendingTemplate({ nodes, edges } as unknown as CanvasTemplate)
+  }, [])
 
   return (
     <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
@@ -57,6 +67,8 @@ export function EditorWorkspaceClient({
             onToggleAiSidebar={() => setAiSidebarOpen((prev) => !prev)}
             onOpenShareDialog={() => setShareDialogOpen(true)}
             onOpenTemplates={() => setTemplatesOpen(true)}
+            onOpenIngest={() => setIngestOpen(true)}
+            onAutoLayout={() => autoLayoutFnRef.current()}
             saveStatus={saveStatus}
             onSave={() => saveFnRef.current()}
           />
@@ -68,6 +80,7 @@ export function EditorWorkspaceClient({
               onTemplateImported={() => setPendingTemplate(null)}
               onSaveStatusChange={handleSaveStatusChange}
               onSaveReady={handleSaveReady}
+              onAutoLayoutReady={handleAutoLayoutReady}
             />
           </main>
 
@@ -99,6 +112,11 @@ export function EditorWorkspaceClient({
             open={templatesOpen}
             onOpenChange={setTemplatesOpen}
             onImport={(template) => setPendingTemplate(template)}
+          />
+          <IngestModal
+            open={ingestOpen}
+            onOpenChange={setIngestOpen}
+            onImport={handleIngestImport}
           />
         </div>
       </RoomProvider>

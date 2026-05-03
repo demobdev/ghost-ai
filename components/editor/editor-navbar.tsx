@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutTemplate, PanelLeftClose, PanelLeftOpen, Save, Share2, Sparkles } from "lucide-react"
+import { LayoutTemplate, PanelLeftClose, PanelLeftOpen, Save, Share2, Sparkles, Upload, LayoutDashboard } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/logo"
@@ -14,6 +14,8 @@ interface EditorNavbarProps {
   onToggleAiSidebar?: () => void
   onOpenShareDialog?: () => void
   onOpenTemplates?: () => void
+  onOpenIngest?: () => void
+  onAutoLayout?: () => void
   saveStatus?: SaveStatus
   onSave?: () => void
 }
@@ -26,6 +28,8 @@ export function EditorNavbar({
   onToggleAiSidebar,
   onOpenShareDialog,
   onOpenTemplates,
+  onOpenIngest,
+  onAutoLayout,
   saveStatus,
   onSave,
 }: EditorNavbarProps) {
@@ -72,6 +76,33 @@ export function EditorNavbar({
                   : "Save"}
               </Button>
             ) : null}
+
+            {onAutoLayout ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={onAutoLayout}
+                title="Auto-arrange nodes using dagre layout"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Auto-layout
+              </Button>
+            ) : null}
+
+            {onOpenIngest ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={onOpenIngest}
+                title="Import an existing architecture"
+              >
+                <Upload className="h-4 w-4" />
+                Import
+              </Button>
+            ) : null}
+
             {onOpenTemplates ? (
               <Button
                 variant="outline"
@@ -83,6 +114,7 @@ export function EditorNavbar({
                 Templates
               </Button>
             ) : null}
+
             {onOpenShareDialog ? (
               <Button
                 variant="outline"
@@ -94,6 +126,7 @@ export function EditorNavbar({
                 Share
               </Button>
             ) : null}
+
             <Button
               variant={isAiSidebarOpen ? "default" : "outline"}
               size="sm"

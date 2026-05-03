@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react"
 import { useMyPresence } from "@liveblocks/react"
+import { applyDagreLayout } from "@/lib/layout"
 import {
   ReactFlow,
   Background,
@@ -55,9 +56,10 @@ interface CanvasEditorProps {
   onTemplateImported?: () => void
   onSaveStatusChange?: (status: SaveStatus) => void
   onSaveReady?: (saveFn: () => void) => void
+  onAutoLayoutReady?: (fn: () => void) => void
 }
 
-export function CanvasEditor({ projectId, pendingTemplate, onTemplateImported, onSaveStatusChange, onSaveReady }: CanvasEditorProps) {
+export function CanvasEditor({ projectId, pendingTemplate, onTemplateImported, onSaveStatusChange, onSaveReady, onAutoLayoutReady }: CanvasEditorProps) {
   const { nodes, edges, onNodesChange, onEdgesChange, onDelete } =
     useLiveblocksFlow<CanvasNode, CanvasEdge>({ suspense: true })
 
@@ -80,9 +82,16 @@ export function CanvasEditor({ projectId, pendingTemplate, onTemplateImported, o
     const currentNodes = nodesRef.current
     const currentEdges = edgesRef.current
 
+    // Apply dagre layout to template nodes for a clean directed-graph arrangement
+    const laidOutNodes = applyDagreLayout(pendingTemplate.nodes, pendingTemplate.edges, {
+      direction: "TB",
+      rankSep: 130,
+      nodeSep: 90,
+    })
+
     onNodesChange([
       ...currentNodes.map((nd) => ({ type: "remove" as const, id: nd.id })),
-      ...pendingTemplate.nodes.map((nd) => ({ type: "add" as const, item: nd })),
+      ...laidOutNodes.map((nd) => ({ type: "add" as const, item: nd })),
     ])
     onEdgesChange([
       ...currentEdges.map((ed) => ({ type: "remove" as const, id: ed.id })),
@@ -90,7 +99,7 @@ export function CanvasEditor({ projectId, pendingTemplate, onTemplateImported, o
     ])
 
     onTemplateImported?.()
-    setTimeout(() => fitView({ duration: 300 }), 120)
+    setTimeout(() => fitView({ duration: 400, padding: 0.1 }), 120)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingTemplate])
 
@@ -122,6 +131,25 @@ export function CanvasEditor({ projectId, pendingTemplate, onTemplateImported, o
 
   useEffect(() => { onSaveStatusChange?.(saveStatus) }, [saveStatus, onSaveStatusChange])
   useEffect(() => { onSaveReady?.(save) }, [save, onSaveReady])
+
+  // Expose an auto-layout trigger to parent via ref
+  const autoLayout = useCallback(() => {
+    const laid = applyDagreLayout(nodesRef.current, edgesRef.current, {
+      direction: "TB",
+      rankSep: 130,
+      nodeSep: 90,
+    })
+    onNodesChange(
+      laid.map((nd) => ({
+        type: "position" as const,
+        id: nd.id,
+        position: nd.position,
+      }))
+    )
+    setTimeout(() => fitView({ duration: 400, padding: 0.1 }), 60)
+  }, [onNodesChange, fitView])
+
+  useEffect(() => { onAutoLayoutReady?.(autoLayout) }, [autoLayout, onAutoLayoutReady])
 
   // Delete selected nodes/edges on Delete or Backspace via Liveblocks mutation helpers.
   const rfNodes = useNodes<CanvasNode>()
@@ -269,6 +297,7 @@ export function CanvasEditor({ projectId, pendingTemplate, onTemplateImported, o
         onRedo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
+        onAutoLayout={autoLayout}
       />
       <ShapePanel />
       <PresenceCursors />

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Minus, Maximize, Plus, Undo2, Redo2, Camera, Check } from "lucide-react"
+import { Minus, Maximize, Plus, Undo2, Redo2, Camera, Check, LayoutDashboard } from "lucide-react"
 import { toPng } from "html-to-image"
 import { useReactFlow } from "@xyflow/react"
 
@@ -13,6 +13,7 @@ interface CanvasControlsProps {
   onRedo: () => void
   canUndo: boolean
   canRedo: boolean
+  onAutoLayout?: () => void
 }
 
 export function CanvasControls({
@@ -23,6 +24,7 @@ export function CanvasControls({
   onRedo,
   canUndo,
   canRedo,
+  onAutoLayout,
 }: CanvasControlsProps) {
   const [exported, setExported] = useState(false)
   const { fitView } = useReactFlow()
@@ -104,6 +106,15 @@ export function CanvasControls({
           <Camera className="h-3.5 w-3.5" />
         )}
       </ControlButton>
+
+      {onAutoLayout && (
+        <>
+          <div className="mx-1 h-4 w-px bg-border-default" />
+          <ControlButton onClick={onAutoLayout} title="Auto-arrange layout (dagre)">
+            <LayoutDashboard className="h-3.5 w-3.5" />
+          </ControlButton>
+        </>
+      )}
     </div>
   )
 }
