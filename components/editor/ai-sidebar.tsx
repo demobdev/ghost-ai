@@ -1271,7 +1271,7 @@ Please explain how this component fits into the overall architecture and identif
                   <span className="text-[10px] text-text-faint">Shift+Enter for newline</span>
                   <Button
                     size="sm"
-                    onClick={handleChatSend}
+                    onClick={() => handleChatSend()}
                     disabled={!chatInput.trim() || chatLoading}
                     className="h-7 gap-1.5 rounded-lg px-3 text-xs text-white hover:opacity-90 disabled:opacity-40"
                     style={
