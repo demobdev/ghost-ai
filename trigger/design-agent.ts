@@ -7,9 +7,10 @@ import type { LiveblocksNode, LiveblocksEdge } from "@liveblocks/react-flow";
 import { getLiveblocks } from "@/lib/liveblocks";
 import { NODE_COLORS, SHAPE_DEFAULTS, NODE_SHAPES } from "@/types/canvas";
 import type { CanvasNode, CanvasEdge, NodeShape } from "@/types/canvas";
+import { getFormattedStackRegistry } from "@/lib/ai/stack-registry";
 
-const AI_USER_ID = "specframe-ai";
-const AI_USER_INFO = { name: "SpecFrame AI", avatar: "", color: "#6457f9" };
+const AI_USER_ID = "truegraph-ai";
+const AI_USER_INFO = { name: "TrueGraph AI", avatar: "", color: "#6457f9" };
 
 const NODE_SYNC_CONFIG = {
   selected: false,
@@ -39,7 +40,7 @@ function buildSystemPrompt(): string {
     (c, i) => `  ${i} (${COLOR_NAMES[i]}): fill=${c.fill} text=${c.text}`
   ).join("\n");
 
-  return `You are SpecFrame AI, an expert system architect that generates technical architecture diagrams on a collaborative canvas.
+  return `You are TrueGraph AI, an expert system architect that generates technical architecture diagrams on a collaborative canvas.
 
 ALLOWED SHAPES (use exact value):
 - rectangle  → services, APIs, microservices, components
@@ -68,6 +69,9 @@ LAYOUT RULES:
 - Edge IDs must be unique, e.g. "edge-api-auth", "edge-1"
 - Node IDs must be unique short slugs, e.g. "api-gateway", "user-db", "auth-service"
 
+TRUEGRAPH STACK RECOMMENDATIONS (Use these as defaults for new systems):
+${getFormattedStackRegistry()}
+
 GENERATION RULES:
 - Create 5-12 nodes; do not overcrowd
 - Add edges to show data/request flow
@@ -75,7 +79,7 @@ GENERATION RULES:
 - When the canvas already has nodes, extend or modify instead of replacing unless asked
 
 INSTRUCTIONS:
-- Call addNode for each node you want to place on the canvas
+- Call addNode for each node you want to place on the canvas. Always include a concise 'summary' of its architectural role!
 - Call addEdge for each connection between nodes
 - Call finalizeDesign last with a 1-2 sentence summary of what was designed`;
 }
@@ -94,6 +98,7 @@ const canvasTools = {
       colorIndex: z.number().int().min(0).max(7).describe("Color palette index 0-7"),
       x: z.number().describe("X position in pixels"),
       y: z.number().describe("Y position in pixels"),
+      summary: z.string().optional().describe("A concise 1-2 sentence summary of the node's architectural purpose and implementation details."),
     }),
   }),
   moveNode: tool({
@@ -119,6 +124,7 @@ const canvasTools = {
       label: z.string().optional(),
       shape: z.enum(NODE_SHAPES).optional(),
       colorIndex: z.number().int().min(0).max(7).optional(),
+      summary: z.string().optional().describe("Update the architectural summary of the node."),
     }),
   }),
   deleteNode: tool({
@@ -172,7 +178,7 @@ export const designAgent = task({
     await lb
       .broadcastEvent(payload.roomId, {
         type: "ai-status",
-        message: "SpecFrame AI is analyzing your request…",
+        message: "TrueGraph AI is analyzing your request…",
         status: "start",
       })
       .catch(() => {});
@@ -240,7 +246,7 @@ export const designAgent = task({
       await lb
         .broadcastEvent(payload.roomId, {
           type: "ai-status",
-          message: "SpecFrame AI encountered an error. Please try again.",
+          message: "TrueGraph AI encountered an error. Please try again.",
           status: "error",
         })
         .catch(() => {});
@@ -274,13 +280,14 @@ function applyToolCall(
 
   switch (call.toolName) {
     case "addNode": {
-      const { id, label, shape, colorIndex, x, y } = input as {
+      const { id, label, shape, colorIndex, x, y, summary } = input as {
         id: string;
         label: string;
         shape: NodeShape;
         colorIndex: number;
         x: number;
         y: number;
+        summary?: string;
       };
       const ci = clampColor(colorIndex);
       const color = NODE_COLORS[ci];
@@ -292,7 +299,7 @@ function applyToolCall(
             id,
             type: "canvasNode",
             position: { x, y },
-            data: { label, color: color.fill, textColor: color.text, shape },
+            data: { label, color: color.fill, textColor: color.text, shape, isNew: true, summary: summary || "" },
             width: size.width,
             height: size.height,
           },
@@ -320,11 +327,12 @@ function applyToolCall(
     }
 
     case "updateNodeData": {
-      const { id, label, shape, colorIndex } = input as {
+      const { id, label, shape, colorIndex, summary } = input as {
         id: string;
         label?: string;
         shape?: NodeShape;
         colorIndex?: number;
+        summary?: string;
       };
       const n = nodes.get(id) as LiveNodeLike | undefined;
       if (n) {
@@ -332,6 +340,7 @@ function applyToolCall(
         if (!data) break;
         if (label !== undefined) data.set("label", label);
         if (shape !== undefined) data.set("shape", shape);
+        if (summary !== undefined) data.set("summary", summary);
         if (colorIndex !== undefined) {
           const ci = clampColor(colorIndex);
           data.set("color", NODE_COLORS[ci].fill);

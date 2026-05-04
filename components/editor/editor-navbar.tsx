@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutTemplate, PanelLeftClose, PanelLeftOpen, Save, Share2, Sparkles, Upload, LayoutDashboard } from "lucide-react"
+import { LayoutTemplate, PanelLeftClose, PanelLeftOpen, Save, Share2, Sparkles, Upload, LayoutDashboard, GitGraph, ExternalLink } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/logo"
@@ -10,6 +10,7 @@ interface EditorNavbarProps {
   isOpen: boolean
   onToggle: () => void
   projectName?: string
+  githubRepoUrl?: string | null
   isAiSidebarOpen?: boolean
   onToggleAiSidebar?: () => void
   onOpenShareDialog?: () => void
@@ -24,6 +25,7 @@ export function EditorNavbar({
   isOpen,
   onToggle,
   projectName,
+  githubRepoUrl,
   isAiSidebarOpen = false,
   onToggleAiSidebar,
   onOpenShareDialog,
@@ -46,9 +48,31 @@ export function EditorNavbar({
         </Button>
 
         {projectName ? (
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-text-primary">{projectName}</p>
-            <p className="text-xs text-text-faint">Workspace</p>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-text-primary">{projectName}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-[10px] uppercase tracking-wider font-bold text-text-faint">Workspace</p>
+                {githubRepoUrl && (
+                  <div className="flex items-center gap-1.5 rounded-full bg-green-500/10 px-1.5 py-0.5 text-[9px] font-bold text-green-500 border border-green-500/20">
+                    <div className="h-1 w-1 rounded-full bg-green-500 animate-pulse" />
+                    CONNECTED
+                  </div>
+                )}
+              </div>
+            </div>
+            {githubRepoUrl && (
+              <a
+                href={githubRepoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-lg border border-border-subtle bg-bg-elevated px-2 py-1 text-[10px] font-medium text-text-muted hover:bg-bg-subtle hover:text-text-primary transition-all group"
+              >
+                <GitGraph className="h-3 w-3" />
+                <span className="hidden sm:inline">Repository</span>
+                <ExternalLink className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </a>
+            )}
           </div>
         ) : (
           <Logo size={24} />

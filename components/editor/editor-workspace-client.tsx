@@ -36,6 +36,7 @@ export function EditorWorkspaceClient({
   const [ingestOpen, setIngestOpen] = useState(false)
   const [pendingTemplate, setPendingTemplate] = useState<CanvasTemplate | null>(null)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle")
+  const [selectedNode, setSelectedNode] = useState<CanvasNode | null>(null)
   const saveFnRef = useRef<() => void>(() => {})
   const autoLayoutFnRef = useRef<() => void>(() => {})
   const actions = useProjectActions()
@@ -45,9 +46,21 @@ export function EditorWorkspaceClient({
   const handleAutoLayoutReady = useCallback((fn: () => void) => { autoLayoutFnRef.current = fn }, [])
 
   // When the ingest modal finishes, treat the result like a template import
-  const handleIngestImport = useCallback(({ nodes, edges }: { nodes: CanvasNode[]; edges: CanvasEdge[] }) => {
+  const handleIngestImport = useCallback(async ({ nodes, edges }: { nodes: CanvasNode[]; edges: CanvasEdge[] }, githubUrl?: string) => {
     setPendingTemplate({ nodes, edges } as unknown as CanvasTemplate)
-  }, [])
+    
+    if (githubUrl && githubUrl.includes("github.com/")) {
+      try {
+        await fetch(`/api/projects/${currentProject.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ githubRepoUrl: githubUrl }),
+        })
+      } catch (err) {
+        console.error("Failed to update project github url", err)
+      }
+    }
+  }, [currentProject.id])
 
   return (
     <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
@@ -63,6 +76,7 @@ export function EditorWorkspaceClient({
             isOpen={sidebarOpen}
             onToggle={() => setSidebarOpen((prev) => !prev)}
             projectName={currentProject.name}
+            githubRepoUrl={currentProject.githubRepoUrl}
             isAiSidebarOpen={aiSidebarOpen}
             onToggleAiSidebar={() => setAiSidebarOpen((prev) => !prev)}
             onOpenShareDialog={() => setShareDialogOpen(true)}
@@ -81,6 +95,7 @@ export function EditorWorkspaceClient({
               onSaveStatusChange={handleSaveStatusChange}
               onSaveReady={handleSaveReady}
               onAutoLayoutReady={handleAutoLayoutReady}
+              onNodeSelect={setSelectedNode}
             />
           </main>
 
@@ -100,6 +115,8 @@ export function EditorWorkspaceClient({
             onClose={() => setAiSidebarOpen(false)}
             roomId={roomId}
             projectId={currentProject.id}
+            onImportArchitecture={handleIngestImport}
+            selectedNode={selectedNode}
           />
 
           <ProjectDialogs {...actions} />

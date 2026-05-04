@@ -16,6 +16,8 @@ export interface CanvasTemplate {
   insight: TemplateInsight
   nodes: CanvasNode[]
   edges: CanvasEdge[]
+  aiPick?: boolean
+  truegraphReason?: string
 }
 
 const C = NODE_COLORS
@@ -64,6 +66,8 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
     id: "microservices",
     name: "Microservices",
     description: "API Gateway routes traffic to isolated services, each backed by a dedicated database and connected via a shared message bus.",
+    aiPick: true,
+    truegraphReason: "Features the AI-preferred combination of Drizzle ORM and PostgreSQL for optimal service isolation and performance.",
     insight: {
       whenToUse: "When teams of 10+ engineers need to deploy, scale, and fail independently. Best after a monolith has proven product-market fit.",
       useCases: ["Large-scale e-commerce platforms", "SaaS products with distinct feature domains", "Enterprise systems modernising a legacy monolith"],
@@ -92,6 +96,8 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
     id: "cicd-pipeline",
     name: "CI/CD Pipeline",
     description: "End-to-end delivery from source commit through build, test, containerisation, and staged deployment to production.",
+    aiPick: true,
+    truegraphReason: "Leverages GitHub Actions (94% AI preference) for the most robust and accessible pipeline automation.",
     insight: {
       whenToUse: "Any team shipping software more than once a week. Required for regulated industries needing audit trails and repeatable deployments.",
       useCases: ["SaaS products with frequent feature releases", "Mobile app store submissions", "Infrastructure-as-code deployments"],

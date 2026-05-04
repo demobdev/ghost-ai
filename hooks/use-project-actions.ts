@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation"
 export interface ProjectRow {
   id: string
   name: string
+  githubRepoUrl?: string | null
 }
 
 export type DialogType = "create" | "rename" | "delete" | null

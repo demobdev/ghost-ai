@@ -13,9 +13,10 @@ interface CanvasRoomProps {
   onSaveStatusChange?: (status: SaveStatus) => void
   onSaveReady?: (saveFn: () => void) => void
   onAutoLayoutReady?: (fn: () => void) => void
+  onNodeSelect?: (node: any) => void
 }
 
-export function CanvasRoom({ projectId, pendingTemplate, onTemplateImported, onSaveStatusChange, onSaveReady, onAutoLayoutReady }: CanvasRoomProps) {
+export function CanvasRoom({ projectId, pendingTemplate, onTemplateImported, onSaveStatusChange, onSaveReady, onAutoLayoutReady, onNodeSelect }: CanvasRoomProps) {
   return (
     <div className="h-full w-full">
       <ClientSideSuspense fallback={<CanvasLoading />}>
@@ -27,6 +28,7 @@ export function CanvasRoom({ projectId, pendingTemplate, onTemplateImported, onS
             onSaveStatusChange={onSaveStatusChange}
             onSaveReady={onSaveReady}
             onAutoLayoutReady={onAutoLayoutReady}
+            onNodeSelect={onNodeSelect}
           />
         </ReactFlowProvider>
       </ClientSideSuspense>

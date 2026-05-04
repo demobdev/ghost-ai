@@ -48,7 +48,8 @@ export function CanvasEdgeComponent({
 
   const label = data?.label ?? ""
   const isActive = selected || isHovered || isEditing
-  const stroke = isActive ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.35)"
+  const stroke = isActive ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.28)"
+  const showHint = (isHovered || selected) && !label && !isEditing
 
   const startEditing = useCallback(
     (e: React.MouseEvent) => {
@@ -93,9 +94,10 @@ export function CanvasEdgeComponent({
         markerEnd={markerEnd}
         style={{
           stroke,
-          strokeWidth: 1.5,
+          strokeWidth: isActive ? 2 : 1.5,
           strokeLinecap: "round",
-          transition: "stroke 0.15s",
+          transition: "stroke 0.15s, stroke-width 0.15s",
+          filter: isActive ? "drop-shadow(0 0 4px rgba(255,255,255,0.15))" : undefined,
         }}
       />
       <EdgeLabelRenderer>
@@ -137,32 +139,38 @@ export function CanvasEdgeComponent({
               onPointerDown={(e) => e.stopPropagation()}
               style={{
                 background: "var(--color-bg-surface)",
-                color: "var(--color-text-primary)",
-                border: "1px solid rgba(255,255,255,0.15)",
+                color: "rgba(255,255,255,0.8)",
+                border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 9999,
                 padding: "2px 10px",
-                fontSize: 12,
+                fontSize: 11,
+                fontWeight: 500,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
                 userSelect: "none",
+                letterSpacing: "0.01em",
               }}
             >
               {label}
             </div>
-          ) : selected ? (
+          ) : showHint ? (
             <div
               onDoubleClick={startEditing}
               onMouseDown={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
               style={{
-                color: "rgba(255,255,255,0.3)",
-                fontSize: 11,
+                color: "rgba(255,255,255,0.28)",
+                fontSize: 10,
                 cursor: "pointer",
                 padding: "2px 8px",
                 userSelect: "none",
+                background: "var(--color-bg-surface)",
+                border: "1px dashed rgba(255,255,255,0.12)",
+                borderRadius: 9999,
+                transition: "opacity 0.15s",
               }}
             >
-              double-click to label
+              + label
             </div>
           ) : null}
         </div>

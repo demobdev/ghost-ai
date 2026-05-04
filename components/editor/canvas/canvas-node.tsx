@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
+import { Info } from "lucide-react"
 import { Handle, Position, NodeResizer, NodeToolbar } from "@xyflow/react"
 import type { NodeProps } from "@xyflow/react"
 import { useMutation } from "@liveblocks/react"
@@ -105,7 +106,7 @@ function ColorSwatch({ pair, isActive, onSelect }: ColorSwatchProps) {
 }
 
 type LiveNodeData = LiveObject<{
-  data: LiveObject<{ label: string; color?: string; textColor?: string; shape?: NodeShape }>
+  data: LiveObject<{ label: string; color?: string; textColor?: string; shape?: NodeShape; decisionTrace?: string }>
 }>
 
 export function CanvasNodeComponent({ id, data, selected }: NodeProps<CanvasNode>) {
@@ -234,10 +235,28 @@ export function CanvasNodeComponent({ id, data, selected }: NodeProps<CanvasNode
             border: `1px solid ${stroke}`,
             width: "100%",
             height: "100%",
+            boxShadow: data.isNew ? `0 0 12px 2px ${textColor}40` : "none",
           }}
-          className="flex items-center justify-center"
+          className="flex items-center justify-center transition-shadow duration-700"
         >
           {labelContent}
+        </div>
+      )}
+
+      {data.isNew && (
+        <div 
+          className="absolute -top-2 -right-2 z-40 rounded-full bg-accent-ai px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-accent-ai-text shadow-sm"
+        >
+          NEW
+        </div>
+      )}
+      
+      {data.isFixing && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-[inherit] bg-black/40 backdrop-blur-[1px]">
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-bg-surface rounded-full border border-border-default shadow-lg animate-pulse">
+            <div className="h-1.5 w-1.5 rounded-full bg-accent-ai animate-ping" />
+            <span className="text-[9px] font-bold tracking-widest text-text-muted uppercase">Fixing</span>
+          </div>
         </div>
       )}
 
@@ -254,6 +273,15 @@ export function CanvasNodeComponent({ id, data, selected }: NodeProps<CanvasNode
           onMouseDown={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
         />
+      )}
+
+      {data.decisionTrace && (
+        <div 
+          className="absolute top-1 right-1 z-30 cursor-help opacity-0 transition-opacity group-hover/node:opacity-100"
+          title={data.decisionTrace}
+        >
+          <Info className="w-3.5 h-3.5" style={{ color: textColor, opacity: 0.8 }} />
+        </div>
       )}
 
       <Handle id="top" type="source" position={Position.Top} className={HANDLE_CLS} />

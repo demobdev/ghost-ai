@@ -24,9 +24,9 @@ export function applyDagreLayout(
   if (nodes.length === 0) return nodes
 
   const {
-    direction = "TB",
-    nodeSep = 80,
-    rankSep = 120,
+    direction = "LR",
+    nodeSep = 120,
+    rankSep = 200,
     marginX = 40,
     marginY = 40,
   } = options

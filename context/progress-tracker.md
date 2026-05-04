@@ -6,14 +6,16 @@ Update this file whenever the current phase, active feature, or implementation s
 - Local dev environment fully initialized — all services connected and working
 
 ## Current Goal
-- Feature 29 (TBD) — next implementation feature
+- Feature 33: Phase 3: The Guardian — CI/CD integration and PR gating.
 
 ## Infrastructure (Completed 2026-05-02)
-- Rebranded from Ghost AI → **SpecFrame** across all source files, UI, and AI system prompts
+- Rebranded from SpecFrame → **TrueGraph** across all source files, UI, AI system prompts, and property names
 - `liveblocks.config.ts` restored with full types (Storage, Presence, UserMeta, RoomEvent, FeedMessageData)
 - Trigger.dev project linked to `proj_bzpbyveqfaigwhmvzmgj`; local worker runs via `npx trigger.dev@latest dev`
-- Vercel project `specframe` deployed at `ghost-ai-six.vercel.app`; Blob store connected (IAD)
+- Vercel project `truegraph` deployed; Blob store connected (IAD)
 - All env vars set: Clerk, Liveblocks, Trigger.dev, Prisma Postgres, Vercel Blob, Google Gemini
+- GitHub Repository Integration: Persistent links to source repositories added to project model and displayed in EditorNavbar.
+- UI Refinement: AI Sidebar tabs refactored to be flush-edge to edge, resolving horizontal overflow and improving visual density.
 
 
 ## Completed
@@ -46,15 +48,16 @@ Update this file whenever the current phase, active feature, or implementation s
 - Feature 25 (Sidebar Chat Feed): ChatFeedMessageSchema (sender, role, content, timestamp) added to types/tasks.ts. liveblocks.config.ts FeedMessageData extended with chat fields (sender, role, content, timestamp) alongside existing ai-status-feed fields. ai-sidebar.tsx: CHAT_FEED_ID "ai-chat" feed created on mount alongside "ai-status-feed"; useFeedMessages("ai-chat") subscribes to chat messages; feed messages validated with ChatFeedMessageSchema before rendering; Chat tab added between AI Architect and Specs tabs; messages rendered in order with sender name, formatted timestamp, and content; current user's messages right-aligned (accent-primary style), others left-aligned (bg-elevated style); input clears on successful send; error banner shown on failure; auto-scroll to bottom on new messages. `npm run build` passes clean.
 - Feature 26 (Design Agent Frontend): ai-sidebar.tsx wired end-to-end: submit pushes user message to ai-chat feed and calls POST /api/ai/design → reads runId, then POST /api/ai/design/token → reads publicToken; useRealtimeRun(runId, { accessToken: publicToken }) tracks run in real time; terminal run status (COMPLETED/FAILED/etc.) pushes final AI message to ai-chat feed and resets loading state; useEventListener updates local statusText for mid-run status display; compact status strip shown above input only while isLoading; AI Architect tab renders validatedChatMessages from ai-chat instead of local state; user bubbles use #62C073 green; AI bubbles use dark bg + accent-ai-text; Chat tab also uses validatedChatMessages with same styling; types/tasks.ts ChatFeedMessageSchema role updated to enum(["user","assistant"]); liveblocks.config.ts FeedMessageData role updated to "user" | "assistant". `npm run build` passes clean.
 - Feature 27 (Spec Generation Flow): app/api/ai/spec/route.ts — POST accepts roomId/chatHistory/nodes/edges, authenticates via Clerk, resolves projectId from roomId using getAccessibleProject (no client-supplied projectId), triggers generate-spec task, creates TaskRun record, returns runId. app/api/ai/spec/token/route.ts — POST accepts runId, verifies TaskRun ownership, issues Trigger.dev public token scoped to that run with 1-hour expiry. trigger/generate-spec.ts — schemaTask (id "generate-spec") with Zod-validated payload (projectId/roomId/chatHistory/nodes/edges); uses Gemini gemini-2.0-flash via @ai-sdk/google generateText to produce a structured Markdown spec from canvas context and chat history; tracks status/specLength in run metadata; returns { spec } as plain Markdown string. `npm run build` passes clean.
-- Feature 29 (Spec UI Integration): GET /api/projects/[projectId]/specs lists specs for a project; GET /api/projects/[projectId]/specs/[specId] returns spec content as text/markdown for preview (not as attachment). ai-sidebar.tsx Specs tab: fetches spec list when sidebar opens, renders clickable compact list with filename/createdAt, download button per item; preview Dialog (base-ui) shows spec content rendered via react-markdown with dark-theme styling; download action creates a temporary anchor to the download endpoint and lets the browser handle the file. react-markdown ^10.1.0 installed. Build clean.
-- Feature 28 (Spec Persistence & Download): ProjectSpec Prisma model added (id, projectId, filePath, createdAt; relation to Project with cascade delete; index on projectId); migration applied and client regenerated. trigger/generate-spec.ts updated to upload generated Markdown to Vercel Blob (specs/{projectId}/{timestamp}.md, private access) and create a ProjectSpec record, returning specId alongside spec. app/api/projects/[projectId]/specs/[specId]/download/route.ts — GET authenticates user, verifies project access via userHasProjectAccess, verifies spec belongs to project, fetches file from Vercel Blob and streams it back as a Markdown attachment (Content-Disposition: attachment). Returns 401/403/404 on error cases. `npm run build` passes clean.
+- Feature 30: Spec UI Integration — GET /api/projects/[projectId]/specs lists specs for a project; GET /api/projects/[projectId]/specs/[specId] returns spec content as text/markdown for preview. ai-sidebar.tsx Specs tab fetches list and supports preview/download. react-markdown installed. Build clean.
+- Feature 31: Spec Persistence & Download — ProjectSpec Prisma model added, migration applied. trigger/generate-spec.ts updated to upload to Vercel Blob and create records. GET /api/projects/[projectId]/specs/[specId]/download route streams file as attachment. `npm run build` passes clean.
+- Feature 32: Architectural Control Plane (Phase 1 & 2) — Rebranded "Specs" to "Notebook" for deep-dive guides. Implemented "Node Inspector" (X-Ray) in AI Sidebar: extracting implementation summaries, API endpoints, core file links, and hygiene checklists during GitHub ingestion. Added node selection state to canvas and hoisted it to workspace. Implemented "Actionable Fixes" UI in Review tab with "Apply Fix" button for findings. `npm run build` passes clean.
+- Feature 34: Multiple-Choice Architectural Fixes — Updated AI review schema to include an `options` array for findings. The "Apply Fix" modal now presents the user with multiple implementation choices (e.g., Sentry vs. PostHog) including descriptions and "Recommended" badges. Implemented optimistic loading states: affected nodes now show a "Fixing..." pulse overlay on the canvas while the AI agent is processing the implementation. Selecting an option enriches the AI prompt to ensure the chosen tool is implemented on the canvas. `npm run build` passes clean.
 
 ## In Progress
-
-- None.
+- Phase 2: Actionable Loop — Refining the back-and-forth "Fix Traceability" and multi-choice interaction.
 
 ## Next Up
-- TBD
+- Phase 3: The Guardian — CI/CD integration and PR gating.
 
 
 

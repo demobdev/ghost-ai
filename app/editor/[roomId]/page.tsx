@@ -28,9 +28,9 @@ export default async function EditorWorkspacePage(
 
   return (
     <EditorWorkspaceClient
-      currentProject={{ id: project.id, name: project.name }}
-      ownedProjects={owned.map((item) => ({ id: item.id, name: item.name }))}
-      sharedProjects={shared.map((item) => ({ id: item.id, name: item.name }))}
+      currentProject={{ id: project.id, name: project.name, githubRepoUrl: project.githubRepoUrl }}
+      ownedProjects={owned.map((item) => ({ id: item.id, name: item.name, githubRepoUrl: item.githubRepoUrl }))}
+      sharedProjects={shared.map((item) => ({ id: item.id, name: item.name, githubRepoUrl: item.githubRepoUrl }))}
       roomId={roomId}
     />
   )

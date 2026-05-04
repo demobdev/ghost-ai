@@ -9,12 +9,14 @@ model Project {
   name           String
   description    String?
   status         ProjectStatus @default(DRAFT)
+  githubRepoUrl  String?
   canvasBlobUrl  String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
   collaborators ProjectCollaborator[]
   specs         ProjectSpec[]
+  reviews       ProjectReview[]
 
   @@index([ownerId])
   @@index([createdAt])
@@ -53,5 +55,19 @@ model ProjectCollaborator {
 
   @@unique([projectId, email])
   @@index([email])
+  @@index([projectId, createdAt])
+}
+
+model ProjectReview {
+  id          String   @id @default(cuid())
+  projectId   String
+  score       Int
+  summary     String
+  findings    Json
+  createdAt   DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
   @@index([projectId, createdAt])
 }

@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Download, CheckCircle2, XCircle, Info } from "lucide-react"
+import { Download, CheckCircle2, XCircle, Info, Sparkles } from "lucide-react"
 import { CANVAS_TEMPLATES, type CanvasTemplate } from "@/components/editor/starter-templates"
 
 // Internal viewBox coordinate space — nodes are scaled/offset to fit here.
@@ -267,6 +267,12 @@ export function StarterTemplatesModal({
                   {hoveredId === template.id && (
                     <InsightPanel template={template} />
                   )}
+                  {template.aiPick && (
+                    <div className="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-accent-ai/90 px-2.5 py-1 text-[10px] font-bold text-white shadow-lg backdrop-blur-md border border-white/20">
+                      <Sparkles className="h-3 w-3 fill-white" />
+                      SPECFRAME RECOMMENDED
+                    </div>
+                  )}
                 </div>
 
                 {/* Card body */}
@@ -276,6 +282,14 @@ export function StarterTemplatesModal({
                     <p className="mt-1.5 text-sm leading-relaxed text-text-muted">
                       {template.description}
                     </p>
+                    {template.aiPick && template.truegraphReason && (
+                      <div className="mt-3 flex items-start gap-2 rounded-lg bg-accent-ai/10 p-2.5 border border-accent-ai/20">
+                        <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-accent-ai" />
+                        <p className="text-[11px] leading-snug text-accent-ai-text italic">
+                          &ldquo;{template.truegraphReason}&rdquo;
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <Button
                     size="sm"

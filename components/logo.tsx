@@ -10,8 +10,8 @@ export function Logo({ size = 28, showName = true, className = "" }: LogoProps) 
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
       <Image
-        src="/logo.png"
-        alt="SpecFrame"
+        src="/truegraph-logo.png"
+        alt="TrueGraph"
         width={size}
         height={size}
         className="shrink-0"
@@ -19,7 +19,7 @@ export function Logo({ size = 28, showName = true, className = "" }: LogoProps) 
       />
       {showName && (
         <span className="text-sm font-semibold text-text-primary">
-          SpecFrame
+          TrueGraph
         </span>
       )}
     </div>

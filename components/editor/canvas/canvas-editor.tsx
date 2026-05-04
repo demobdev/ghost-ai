@@ -31,6 +31,7 @@ import { useHelperLines } from "@/hooks/use-helper-lines"
 import type { CanvasTemplate } from "@/components/editor/starter-templates"
 import { useCanvasAutosave, type SaveStatus } from "@/hooks/use-canvas-autosave"
 import { HelperLinesOverlay } from "@/components/editor/canvas/helper-lines-overlay"
+import { KeyboardShortcutsOverlay } from "@/components/editor/canvas/keyboard-shortcuts-overlay"
 
 const nodeTypes = { canvasNode: CanvasNodeComponent }
 const edgeTypes = { canvasEdge: CanvasEdgeComponent }
@@ -59,9 +60,10 @@ interface CanvasEditorProps {
   onSaveStatusChange?: (status: SaveStatus) => void
   onSaveReady?: (saveFn: () => void) => void
   onAutoLayoutReady?: (fn: () => void) => void
+  onNodeSelect?: (node: CanvasNode | null) => void
 }
 
-export function CanvasEditor({ projectId, pendingTemplate, onTemplateImported, onSaveStatusChange, onSaveReady, onAutoLayoutReady }: CanvasEditorProps) {
+export function CanvasEditor({ projectId, pendingTemplate, onTemplateImported, onSaveStatusChange, onSaveReady, onAutoLayoutReady, onNodeSelect }: CanvasEditorProps) {
   const { nodes, edges, onNodesChange, onEdgesChange, onDelete } =
     useLiveblocksFlow<CanvasNode, CanvasEdge>({ suspense: true })
 
@@ -85,11 +87,7 @@ export function CanvasEditor({ projectId, pendingTemplate, onTemplateImported, o
     const currentEdges = edgesRef.current
 
     // Apply dagre layout to template nodes for a clean directed-graph arrangement
-    const laidOutNodes = applyDagreLayout(pendingTemplate.nodes, pendingTemplate.edges, {
-      direction: "TB",
-      rankSep: 130,
-      nodeSep: 90,
-    })
+    const laidOutNodes = applyDagreLayout(pendingTemplate.nodes, pendingTemplate.edges)
 
     onNodesChange([
       ...currentNodes.map((nd) => ({ type: "remove" as const, id: nd.id })),
@@ -136,11 +134,7 @@ export function CanvasEditor({ projectId, pendingTemplate, onTemplateImported, o
 
   // Expose an auto-layout trigger to parent via ref
   const autoLayout = useCallback(() => {
-    const laid = applyDagreLayout(nodesRef.current, edgesRef.current, {
-      direction: "TB",
-      rankSep: 130,
-      nodeSep: 90,
-    })
+    const laid = applyDagreLayout(nodesRef.current, edgesRef.current)
     onNodesChange(
       laid.map((nd) => ({
         type: "position" as const,
@@ -282,6 +276,8 @@ export function CanvasEditor({ projectId, pendingTemplate, onTemplateImported, o
         onConnect={onConnect}
         onNodeDrag={onNodeDrag}
         onNodeDragStop={onNodeDragStop}
+        onNodeClick={(_, node) => onNodeSelect?.(node as CanvasNode)}
+        onPaneClick={() => onNodeSelect?.(null)}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         connectionMode={ConnectionMode.Loose}
@@ -311,6 +307,7 @@ export function CanvasEditor({ projectId, pendingTemplate, onTemplateImported, o
       <PresenceCursors />
       <CollaboratorAvatars />
       <SaveStatusIndicator status={saveStatus} />
+      <KeyboardShortcutsOverlay />
     </div>
   )
 }

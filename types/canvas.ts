@@ -36,6 +36,13 @@ export interface CanvasNodeData extends Record<string, unknown> {
   color?: string
   textColor?: string
   shape?: NodeShape
+  decisionTrace?: string
+  summary?: string
+  endpoints?: string[]
+  fileLinks?: string[]
+  hygieneChecklist?: { task: string; completed: boolean }[]
+  isNew?: boolean
+  isFixing?: boolean
 }
 
 export interface CanvasEdgeData extends Record<string, unknown> {

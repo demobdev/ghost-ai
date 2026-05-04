@@ -51,7 +51,7 @@
 ### Design Generation
 
 - Input: user prompt, project context, and current canvas state.
-- Execution: `design-agent` durable background task via Trigger.dev v3.
+- Execution: `design-agent` (TrueGraph AI) durable background task via Trigger.dev v3.
 - AI: Google Gemini 2.0 Flash via `@ai-sdk/google` (`createGoogleGenerativeAI`).
 - Output: structured node and edge updates written into the shared Liveblocks room via `mutateStorage`.
 - Status events broadcast to collaborators via Liveblocks `broadcastEvent` and `setPresence`.
@@ -61,7 +61,7 @@
 - Input: current canvas graph (nodes/edges), chat history, and project context.
 - Execution: `generate-spec` durable background task via Trigger.dev v3.
 - AI: Google Gemini 2.0 Flash via `@ai-sdk/google`.
-- Output: Markdown technical spec uploaded to Vercel Blob (`specs/{projectId}/{timestamp}.md`, private access) and linked to the project via a `ProjectSpec` record in PostgreSQL.
+- Output: Markdown technical spec uploaded to Vercel Blob (`specs/{projectId}/{timestamp}.md`, private access) and linked to the project via a `ProjectSpec` record in PostgreSQL. Technical specification documents are branded as TrueGraph Specs.
 
 ## Liveblocks Room Data
 

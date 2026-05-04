@@ -4,6 +4,7 @@ import { generateText } from "ai"
 import { z } from "zod"
 import { put } from "@vercel/blob"
 import { prisma } from "@/lib/prisma"
+import { getFormattedStackRegistry } from "@/lib/ai/stack-registry"
 
 const chatMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -67,7 +68,7 @@ function buildContext(nodes: Node[], edges: Edge[], chatHistory: ChatMessage[]):
     .join("\n")
 
   const chatLines = chatHistory
-    .map((m) => `${m.role === "user" ? "User" : "SpecFrame AI"}: ${m.content}`)
+    .map((m) => `${m.role === "user" ? "User" : "TrueGraph AI"}: ${m.content}`)
     .join("\n")
 
   return [
@@ -82,15 +83,18 @@ function buildContext(nodes: Node[], edges: Edge[], chatHistory: ChatMessage[]):
   ].join("\n")
 }
 
-const SYSTEM_PROMPT = `You are SpecFrame AI, a senior technical architect. Generate a comprehensive Markdown technical specification document based on the provided architecture canvas and conversation context.
+const SYSTEM_PROMPT = `You are TrueGraph AI, a senior technical architect. Generate a comprehensive Markdown technical specification document based on the provided architecture canvas and conversation context.
 
 Structure the spec as follows:
 1. **Overview** — What the system does and its key goals
 2. **Architecture** — High-level architecture description based on the canvas
 3. **Components** — Each node/service with its role and responsibilities
 4. **Data Flow** — How data and requests move through the system
-5. **Technology Choices** — Suggested technologies that fit the architecture
+5. **Technology Choices** — Suggested technologies that fit the architecture. Use the TRUEGRAPH STACK REGISTRY below for modern defaults.
 6. **Key Considerations** — Scalability, security, and performance notes
+
+TRUEGRAPH STACK REGISTRY (AI-Preferred Standards):
+${getFormattedStackRegistry()}
 
 Write in clear, professional technical language. Use Markdown headers, bullet points, and code blocks where appropriate. Be specific and actionable.`
 

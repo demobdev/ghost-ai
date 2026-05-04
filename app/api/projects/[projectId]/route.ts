@@ -15,17 +15,20 @@ export async function PATCH(
   if (!project) return Response.json({ error: "Not found" }, { status: 404 })
   if (project.ownerId !== userId) return Response.json({ error: "Forbidden" }, { status: 403 })
 
-  const body: unknown = await request.json().catch(() => ({}))
-  const name =
-    typeof body === "object" && body !== null && "name" in body && typeof (body as { name: unknown }).name === "string"
-      ? (body as { name: string }).name.trim()
-      : undefined
+  const body = (await request.json().catch(() => ({}))) as any
+  
+  const data: any = {}
+  if (body.name) data.name = body.name.trim()
+  if (body.description !== undefined) data.description = body.description
+  if (body.githubRepoUrl !== undefined) data.githubRepoUrl = body.githubRepoUrl
 
-  if (!name) return Response.json({ error: "name is required" }, { status: 400 })
+  if (Object.keys(data).length === 0) {
+    return Response.json({ error: "No fields to update" }, { status: 400 })
+  }
 
   const updated = await prisma.project.update({
     where: { id: projectId },
-    data: { name },
+    data,
   })
 
   return Response.json({ project: updated })
