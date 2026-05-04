@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
-import { userHasProjectAccess } from "@/lib/project-access"
+import { userHasProjectAccess, getCurrentProjectIdentity } from "@/lib/project-access"
 
 export async function GET(
   req: Request,
@@ -14,7 +14,8 @@ export async function GET(
     }
 
     const { projectId } = await params
-    const hasAccess = await userHasProjectAccess(userId, projectId)
+    const identity = await getCurrentProjectIdentity()
+    const hasAccess = await userHasProjectAccess(projectId, identity)
 
     if (!hasAccess) {
       return new NextResponse("Not Found", { status: 404 })
@@ -44,7 +45,8 @@ export async function POST(
     }
 
     const { projectId } = await params
-    const hasAccess = await userHasProjectAccess(userId, projectId)
+    const identity = await getCurrentProjectIdentity()
+    const hasAccess = await userHasProjectAccess(projectId, identity)
 
     if (!hasAccess) {
       return new NextResponse("Not Found", { status: 404 })
